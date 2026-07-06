@@ -26,7 +26,7 @@ export default function SignUp() {
 
     setLoading(true)
 
-    const { error: signUpError } = await supabase.auth.signUp({
+    const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
     })
@@ -34,6 +34,8 @@ export default function SignUp() {
     if (signUpError) {
       setError(signUpError.message)
       setLoading(false)
+    } else if (data?.session) {
+      navigate('/dashboard')
     } else {
       navigate('/signin', {
         state: { message: 'Account created! Check your email to confirm, or sign in now.' },
