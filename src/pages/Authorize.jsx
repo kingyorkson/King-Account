@@ -45,12 +45,24 @@ export default function Authorize() {
     setAuthorizing(true)
     setError('')
 
-    const { error: authError } = await supabase.from('authorizations').upsert({
-      user_id: user.id,
-      app_id: clientId,
-      scopes: ['identity'],
-      updated_at: new Date().toISOString(),
-    })
+    const { data: existing } = await supabase
+      .from('authorizations')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('app_id', clientId)
+      .maybeSingle()
+
+    let authError
+    if (existing) {
+      ({ error: authError } = await supabase
+        .from('authorizations')
+        .update({ scopes: ['identity'], updated_at: new Date().toISOString() })
+        .eq('id', existing.id))
+    } else {
+      ({ error: authError } = await supabase
+        .from('authorizations')
+        .insert({ user_id: user.id, app_id: clientId, scopes: ['identity'] }))
+    }
 
     if (authError) {
       setError('Failed to authorize. Please try again.')
