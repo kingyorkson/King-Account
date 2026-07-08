@@ -98,6 +98,11 @@ export default function Authorize() {
     )
   }
 
+  const handleSwitchAccount = async () => {
+    await supabase.auth.signOut()
+    navigate(`/signin?redirect=${encodeURIComponent(window.location.href)}`)
+  }
+
   return (
     <div className="authorize-page">
       <div className="card">
@@ -130,6 +135,10 @@ export default function Authorize() {
           </div>
         </div>
 
+        <p className="text-muted" style={{ fontSize: '0.8125rem', marginBottom: '1rem' }}>
+          Signed in as <strong>{user.email}</strong>
+        </p>
+
         {error && <div className="alert alert-error">{error}</div>}
 
         <div className="authorize-actions">
@@ -138,6 +147,16 @@ export default function Authorize() {
           </button>
           <button className="btn btn-primary" onClick={handleAuthorize} disabled={authorizing}>
             {authorizing ? 'Authorizing...' : 'Authorize'}
+          </button>
+        </div>
+
+        <div style={{ marginTop: '1rem' }}>
+          <button
+            className="btn btn-outline"
+            style={{ width: '100%', fontSize: '0.8125rem' }}
+            onClick={handleSwitchAccount}
+          >
+            Switch account
           </button>
         </div>
       </div>
