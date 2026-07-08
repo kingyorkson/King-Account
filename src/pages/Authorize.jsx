@@ -83,15 +83,17 @@ export default function Authorize() {
     )
   }
 
+  const goToSignIn = () => {
+    sessionStorage.setItem('redirectAfterAuth', window.location.hash.replace('#', ''))
+    navigate('/signin')
+  }
+
   if (!user) {
     return (
       <div className="authorize-page">
         <h2>Sign in required</h2>
         <p className="text-muted mb-1">You need to sign in to authorize this application.</p>
-        <button
-          className="btn btn-primary"
-          onClick={() => navigate(`/signin?redirect=${encodeURIComponent(window.location.hash.replace('#', ''))}`)}
-        >
+        <button className="btn btn-primary" onClick={goToSignIn}>
           Sign In
         </button>
       </div>
@@ -100,7 +102,8 @@ export default function Authorize() {
 
   const handleSwitchAccount = async () => {
     await supabase.auth.signOut()
-    navigate(`/signin?redirect=${encodeURIComponent(window.location.hash.replace('#', ''))}`)
+    sessionStorage.setItem('redirectAfterAuth', window.location.hash.replace('#', ''))
+    navigate('/signin')
   }
 
   return (
