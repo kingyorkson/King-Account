@@ -90,7 +90,7 @@ export default function Authorize() {
         <p className="text-muted mb-1">You need to sign in to authorize this application.</p>
         <button
           className="btn btn-primary"
-          onClick={() => navigate(`/signin?redirect=${encodeURIComponent(window.location.href)}`)}
+          onClick={() => navigate(`/signin?redirect=${encodeURIComponent(window.location.hash.replace('#', ''))}`)}
         >
           Sign In
         </button>
@@ -100,7 +100,7 @@ export default function Authorize() {
 
   const handleSwitchAccount = async () => {
     await supabase.auth.signOut()
-    navigate(`/signin?redirect=${encodeURIComponent(window.location.href)}`)
+    navigate(`/signin?redirect=${encodeURIComponent(window.location.hash.replace('#', ''))}`)
   }
 
   return (
