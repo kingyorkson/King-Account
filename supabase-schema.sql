@@ -11,6 +11,7 @@ CREATE TABLE public.apps (
   creator_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
   allow_king_device BOOLEAN DEFAULT false,
   unique_id TEXT,
+  features TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 

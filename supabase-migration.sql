@@ -3,6 +3,7 @@
 
 ALTER TABLE public.apps ADD COLUMN IF NOT EXISTS allow_king_device BOOLEAN DEFAULT false;
 ALTER TABLE public.apps ADD COLUMN IF NOT EXISTS unique_id TEXT;
+ALTER TABLE public.apps ADD COLUMN IF NOT EXISTS features TEXT;
 
 CREATE TABLE IF NOT EXISTS public.king_devices (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,

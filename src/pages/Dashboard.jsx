@@ -317,36 +317,34 @@ function genUniqueId() {
   return result
 }
 
-function makeCodeSample(app) {
+function makeCodeSample(app, customFeatures) {
+  const ver = '1.0.0'
+  const features = customFeatures && customFeatures.length > 0
+    ? customFeatures.map(f => `  ${f}`).join(',\n')
+    : `  "remote control",\n  "sleep switching",\n  "custom mode",\n  custom("custom feature description")`
   return `#!/bin/sh
-# King Device Connection Script
-# App: ${app.name}
-# Client ID: ${app.id}
-# Unique ID: ${app.unique_id || 'NOT SET'}
+# King Device Configuration
+# Version: ${ver}
 
-# This script demonstrates how a King Device authenticates
-# with the King Account service.
-
-AUTH_URL="https://kingyorkson.github.io/King-Account/#/authorize"
+APP_NAME="${app.name}"
 CLIENT_ID="${app.id}"
 UNIQUE_ID="${app.unique_id || 'ERROR_NO_UNIQUE_ID'}"
-DEVICE_NAME=$(hostname)
+AUTH_URL="https://kingyorkson.github.io/King-Account/#/authorize?client_id=${app.id}"
+VERSION="${ver}"
 
-echo "Authenticating device: $DEVICE_NAME"
-echo "Using Client ID: $CLIENT_ID"
+# This configuration is cached locally.
+# It will NOT update automatically.
+# To update: manually run the update script or re-download from Developer page.
+
+FEATURES=[
+${features}
+]
+
+# Device registration
+echo "Config loaded for: $APP_NAME"
+echo "Version: $VERSION"
 echo "Using Unique ID: $UNIQUE_ID"
-
-# Device registration request
-curl -s -X POST "https://fqmmzwtlnnsisgdawwho.supabase.co/rest/v1/king_devices" \\
-  -H "Content-Type: application/json" \\
-  -d "{
-    \\"device_name\\": \\"$DEVICE_NAME\\",
-    \\"device_identifier\\": \\"$UNIQUE_ID\\"
-  }"
-
-echo ""
-echo "Device registration complete."
-echo "Open $AUTH_URL?client_id=$CLIENT_ID&redirect_uri=yourapp://callback to authorize."
+echo "Features: $(echo "$FEATURES" | wc -l) configured"
 `
 }
 
@@ -356,9 +354,14 @@ function EditAppForm({ app, onSave, onCancel }) {
   const [redirectUri, setRedirectUri] = useState(app.redirect_uri)
   const [allowKingDevice, setAllowKingDevice] = useState(app.allow_king_device || false)
   const [uniqueId, setUniqueId] = useState(app.unique_id || '')
+  const [featuresText, setFeaturesText] = useState(app.features || '')
   const [saving, setSaving] = useState(false)
   const [codeCopied, setCodeCopied] = useState(false)
   const [uniqueIdCopied, setUniqueIdCopied] = useState(false)
+
+  const customFeatures = featuresText
+    ? featuresText.split('\n').map(l => l.trim()).filter(Boolean)
+    : []
 
   const handleSave = async () => {
     setSaving(true)
@@ -368,6 +371,7 @@ function EditAppForm({ app, onSave, onCancel }) {
       redirect_uri: redirectUri.trim(),
       allow_king_device: allowKingDevice,
       unique_id: uniqueId || null,
+      features: featuresText || null,
     }).eq('id', app.id)
 
     if (!error) {
@@ -380,7 +384,7 @@ function EditAppForm({ app, onSave, onCancel }) {
     setUniqueId(genUniqueId())
   }
 
-  const codeSample = makeCodeSample({ ...app, name, unique_id: uniqueId })
+  const codeSample = makeCodeSample({ ...app, name, unique_id: uniqueId }, customFeatures)
 
   const handleDownload = () => {
     const blob = new Blob([codeSample], { type: 'application/x-sh' })
@@ -421,7 +425,21 @@ function EditAppForm({ app, onSave, onCancel }) {
 
       {allowKingDevice && (
         <div style={{ background: 'var(--bg-input)', borderRadius: 'var(--radius)', padding: '1rem', marginBottom: '1rem' }}>
-          <h4 style={{ marginBottom: '0.75rem', fontSize: '0.9375rem' }}>King Device Example Code</h4>
+          <h4 style={{ marginBottom: '0.75rem', fontSize: '0.9375rem' }}>King Device Configuration v1.0.0</h4>
+
+          <div className="form-group">
+            <label>Custom Features (one per line)</label>
+            <textarea
+              value={featuresText}
+              onChange={(e) => setFeaturesText(e.target.value)}
+              placeholder={'\"remote control\"\n\"sleep switching\"\n\"custom mode\"\ncustom(\"custom feature description\")'}
+              style={{
+                width: '100%', minHeight: '80px', padding: '0.5rem 0.75rem', background: 'var(--bg)',
+                border: '1px solid var(--border)', borderRadius: 'var(--radius)', color: 'var(--text)',
+                fontSize: '0.8125rem', fontFamily: 'monospace', resize: 'vertical',
+              }}
+            />
+          </div>
 
           {!uniqueId ? (
             <div className="alert alert-error">
