@@ -9,6 +9,8 @@ CREATE TABLE public.apps (
   redirect_uri TEXT NOT NULL,
   logo_url TEXT,
   creator_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  allow_king_device BOOLEAN DEFAULT false,
+  unique_id TEXT,
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
@@ -39,6 +41,17 @@ CREATE TABLE public.user_settings (
   user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
   profile_visible BOOLEAN DEFAULT true,
   updated_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- King Devices
+CREATE TABLE public.king_devices (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
+  app_id UUID REFERENCES public.apps(id) ON DELETE SET NULL,
+  device_name TEXT NOT NULL,
+  device_identifier TEXT,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  last_seen TIMESTAMPTZ DEFAULT now()
 );
 
 -- Enable Row Level Security
@@ -85,6 +98,14 @@ CREATE POLICY "Users manage their own app data"
 -- User settings: users manage their own
 CREATE POLICY "Users manage their own settings"
   ON public.user_settings FOR ALL
+  USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);
+
+-- King Devices
+ALTER TABLE public.king_devices ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users manage their own king devices"
+  ON public.king_devices FOR ALL
   USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
 

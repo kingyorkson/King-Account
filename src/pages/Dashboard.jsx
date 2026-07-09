@@ -6,6 +6,7 @@ function DashboardHome() {
   const [user, setUser] = useState(null)
   const [appCount, setAppCount] = useState(0)
   const [storageCount, setStorageCount] = useState(0)
+  const [deviceCount, setDeviceCount] = useState(0)
   const [createdAt, setCreatedAt] = useState('')
 
   useEffect(() => {
@@ -14,17 +15,12 @@ function DashboardHome() {
         setUser(data.user)
         setCreatedAt(new Date(data.user.created_at).toLocaleDateString())
 
-        supabase
-          .from('authorizations')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', data.user.id)
+        supabase.from('authorizations').select('id', { count: 'exact', head: true }).eq('user_id', data.user.id)
           .then(({ count }) => setAppCount(count || 0))
-
-        supabase
-          .from('app_data')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', data.user.id)
+        supabase.from('app_data').select('id', { count: 'exact', head: true }).eq('user_id', data.user.id)
           .then(({ count }) => setStorageCount(count || 0))
+        supabase.from('king_devices').select('id', { count: 'exact', head: true }).eq('user_id', data.user.id)
+          .then(({ count }) => setDeviceCount(count || 0))
       }
     })
   }, [])
@@ -32,7 +28,6 @@ function DashboardHome() {
   return (
     <>
       <h2>Account Dashboard</h2>
-
       <div className="stats-grid">
         <div className="stat-card">
           <h3>Account Status</h3>
@@ -47,11 +42,14 @@ function DashboardHome() {
           <p>{storageCount}</p>
         </div>
         <div className="stat-card">
+          <h3>King Devices</h3>
+          <p>{deviceCount}</p>
+        </div>
+        <div className="stat-card">
           <h3>Created</h3>
           <p style={{ fontSize: '1rem' }}>{createdAt}</p>
         </div>
       </div>
-
       <div className="card">
         <h3 style={{ marginBottom: '0.75rem' }}>Account Info</h3>
         <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)' }}>
@@ -63,7 +61,6 @@ function DashboardHome() {
 }
 
 function PasswordSettings() {
-  const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
@@ -75,15 +72,12 @@ function PasswordSettings() {
     setMessage('')
     setLoading(true)
 
-    const { error: updateError } = await supabase.auth.updateUser({
-      password: newPassword,
-    })
+    const { error: updateError } = await supabase.auth.updateUser({ password: newPassword })
 
     if (updateError) {
       setError(updateError.message)
     } else {
       setMessage('Password updated successfully')
-      setCurrentPassword('')
       setNewPassword('')
     }
     setLoading(false)
@@ -92,23 +86,14 @@ function PasswordSettings() {
   return (
     <>
       <h2>Change Password</h2>
-
       <div className="card">
         <form onSubmit={handleSubmit}>
           {message && <div className="alert alert-success">{message}</div>}
           {error && <div className="alert alert-error">{error}</div>}
-
           <div className="form-group">
             <label>New Password</label>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="New password (min 6 characters)"
-              required
-            />
+            <input type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} placeholder="New password (min 6 characters)" required />
           </div>
-
           <button type="submit" className="btn btn-primary" disabled={loading}>
             {loading ? 'Updating...' : 'Update Password'}
           </button>
@@ -133,7 +118,6 @@ function PrivacySettings() {
       { user_id: user.id, profile_visible: profileVisible },
       { onConflict: 'user_id' }
     )
-
     if (!error) {
       setMessage('Privacy settings saved')
       setSaved(true)
@@ -143,30 +127,18 @@ function PrivacySettings() {
   return (
     <>
       <h2>Privacy Settings</h2>
-
       <div className="card">
         {message && <div className="alert alert-success">{message}</div>}
-
         <div style={{ marginBottom: '1.5rem' }}>
           <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
-            <input
-              type="checkbox"
-              checked={profileVisible}
-              onChange={() => { setProfileVisible(!profileVisible); setSaved(false) }}
-              style={{ width: '18px', height: '18px' }}
-            />
+            <input type="checkbox" checked={profileVisible} onChange={() => { setProfileVisible(!profileVisible); setSaved(false) }} style={{ width: '18px', height: '18px' }} />
             <div>
               <strong>Profile visible to applications</strong>
-              <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
-                Allow authorized applications to see your profile information
-              </p>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Allow authorized applications to see your profile information</p>
             </div>
           </label>
         </div>
-
-        <button className="btn btn-primary" onClick={handleSave} disabled={saved}>
-          Save Settings
-        </button>
+        <button className="btn btn-primary" onClick={handleSave} disabled={saved}>Save Settings</button>
       </div>
     </>
   )
@@ -182,17 +154,13 @@ function AuthorizedApps() {
       .from('authorizations')
       .select('*, apps(*)')
       .eq('user_id', userId)
-
     setApps(authData || [])
     setLoading(false)
   }
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data?.user) {
-        setUser(data.user)
-        fetchApps(data.user.id)
-      }
+      if (data?.user) { setUser(data.user); fetchApps(data.user.id) }
     })
   }, [])
 
@@ -206,7 +174,6 @@ function AuthorizedApps() {
   return (
     <>
       <h2>Authorized Apps</h2>
-
       {apps.length === 0 ? (
         <div className="card">
           <div className="empty-state">
@@ -222,14 +189,10 @@ function AuthorizedApps() {
                 <div className="app-item-icon">{auth.apps?.name?.charAt(0) || '?'}</div>
                 <div>
                   <strong>{auth.apps?.name || 'Unknown App'}</strong>
-                  <p className="text-muted" style={{ fontSize: '0.8125rem' }}>
-                    Authorized {new Date(auth.created_at).toLocaleDateString()}
-                  </p>
+                  <p className="text-muted" style={{ fontSize: '0.8125rem' }}>Authorized {new Date(auth.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
-              <button className="btn btn-danger" style={{ padding: '0.4rem 0.75rem', fontSize: '0.8125rem' }} onClick={() => handleRevoke(auth.id)}>
-                Revoke
-              </button>
+              <button className="btn btn-danger" style={{ padding: '0.4rem 0.75rem', fontSize: '0.8125rem' }} onClick={() => handleRevoke(auth.id)}>Revoke</button>
             </div>
           ))}
         </div>
@@ -247,11 +210,7 @@ function CloudStorage() {
     supabase.auth.getUser().then(async ({ data }) => {
       if (data?.user) {
         setUser(data.user)
-        const { data: storageData } = await supabase
-          .from('app_data')
-          .select('*, apps(name)')
-          .eq('user_id', data.user.id)
-
+        const { data: storageData } = await supabase.from('app_data').select('*, apps(name)').eq('user_id', data.user.id)
         setStorageItems(storageData || [])
         setLoading(false)
       }
@@ -263,7 +222,6 @@ function CloudStorage() {
   return (
     <>
       <h2>Cloud Storage</h2>
-
       {storageItems.length === 0 ? (
         <div className="card">
           <div className="empty-state">
@@ -278,26 +236,242 @@ function CloudStorage() {
               <div className="app-item-info">
                 <div>
                   <strong>{item.apps?.name || 'Unknown App'}</strong>
-                  <p className="text-muted" style={{ fontSize: '0.8125rem' }}>
-                    Stored since {new Date(item.created_at).toLocaleDateString()}
-                  </p>
+                  <p className="text-muted" style={{ fontSize: '0.8125rem' }}>Stored since {new Date(item.created_at).toLocaleDateString()}</p>
                 </div>
               </div>
-              <button
-                className="btn btn-danger"
-                style={{ padding: '0.4rem 0.75rem', fontSize: '0.8125rem' }}
+              <button className="btn btn-danger" style={{ padding: '0.4rem 0.75rem', fontSize: '0.8125rem' }}
                 onClick={async () => {
                   await supabase.from('app_data').delete().eq('id', item.id)
                   setStorageItems(storageItems.filter((i) => i.id !== item.id))
-                }}
-              >
-                Delete
-              </button>
+                }}>Delete</button>
             </div>
           ))}
         </div>
       )}
     </>
+  )
+}
+
+function KingDevices() {
+  const [user, setUser] = useState(null)
+  const [devices, setDevices] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  const fetchDevices = async (userId) => {
+    const { data } = await supabase.from('king_devices').select('*, apps(name)').eq('user_id', userId).order('created_at', { ascending: false })
+    setDevices(data || [])
+    setLoading(false)
+  }
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) { setUser(data.user); fetchDevices(data.user.id) }
+    })
+  }, [])
+
+  const handleRemove = async (deviceId) => {
+    await supabase.from('king_devices').delete().eq('id', deviceId)
+    if (user) fetchDevices(user.id)
+  }
+
+  if (loading) return <p className="text-muted">Loading...</p>
+
+  return (
+    <>
+      <h2>King Devices</h2>
+      {devices.length === 0 ? (
+        <div className="card">
+          <div className="empty-state">
+            <p style={{ fontSize: '1.125rem', marginBottom: '0.5rem' }}>No authorized devices</p>
+            <p>Devices that have been authorized through King Account will appear here.</p>
+          </div>
+        </div>
+      ) : (
+        <div className="apps-list">
+          {devices.map((device) => (
+            <div key={device.id} className="app-item">
+              <div className="app-item-info">
+                <div className="app-item-icon">{device.device_name.charAt(0)}</div>
+                <div>
+                  <strong>{device.device_name}</strong>
+                  <p className="text-muted" style={{ fontSize: '0.8125rem' }}>
+                    {device.apps?.name ? `via ${device.apps.name} - ` : ''}Authorized {new Date(device.created_at).toLocaleDateString()}
+                  </p>
+                </div>
+              </div>
+              <button className="btn btn-danger" style={{ padding: '0.4rem 0.75rem', fontSize: '0.8125rem' }} onClick={() => handleRemove(device.id)}>Remove</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  )
+}
+
+function genUniqueId() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
+  let result = ''
+  for (let i = 0; i < 24; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length))
+  }
+  return result
+}
+
+function makeCodeSample(app) {
+  return `#!/bin/sh
+# King Device Connection Script
+# App: ${app.name}
+# Client ID: ${app.id}
+# Unique ID: ${app.unique_id || 'NOT SET'}
+
+# This script demonstrates how a King Device authenticates
+# with the King Account service.
+
+AUTH_URL="https://kingyorkson.github.io/King-Account/#/authorize"
+CLIENT_ID="${app.id}"
+UNIQUE_ID="${app.unique_id || 'ERROR_NO_UNIQUE_ID'}"
+DEVICE_NAME=$(hostname)
+
+echo "Authenticating device: $DEVICE_NAME"
+echo "Using Client ID: $CLIENT_ID"
+echo "Using Unique ID: $UNIQUE_ID"
+
+# Device registration request
+curl -s -X POST "https://fqmmzwtlnnsisgdawwho.supabase.co/rest/v1/king_devices" \\
+  -H "Content-Type: application/json" \\
+  -d "{
+    \\"device_name\\": \\"$DEVICE_NAME\\",
+    \\"device_identifier\\": \\"$UNIQUE_ID\\"
+  }"
+
+echo ""
+echo "Device registration complete."
+echo "Open $AUTH_URL?client_id=$CLIENT_ID&redirect_uri=yourapp://callback to authorize."
+`
+}
+
+function EditAppForm({ app, onSave, onCancel }) {
+  const [name, setName] = useState(app.name)
+  const [description, setDescription] = useState(app.description || '')
+  const [redirectUri, setRedirectUri] = useState(app.redirect_uri)
+  const [allowKingDevice, setAllowKingDevice] = useState(app.allow_king_device || false)
+  const [uniqueId, setUniqueId] = useState(app.unique_id || '')
+  const [saving, setSaving] = useState(false)
+  const [codeCopied, setCodeCopied] = useState(false)
+  const [uniqueIdCopied, setUniqueIdCopied] = useState(false)
+
+  const handleSave = async () => {
+    setSaving(true)
+    const { error } = await supabase.from('apps').update({
+      name: name.trim(),
+      description: description.trim(),
+      redirect_uri: redirectUri.trim(),
+      allow_king_device: allowKingDevice,
+      unique_id: uniqueId || null,
+    }).eq('id', app.id)
+
+    if (!error) {
+      onSave()
+    }
+    setSaving(false)
+  }
+
+  const handleGetUniqueId = () => {
+    setUniqueId(genUniqueId())
+  }
+
+  const codeSample = makeCodeSample({ ...app, name, unique_id: uniqueId })
+
+  const handleDownload = () => {
+    const blob = new Blob([codeSample], { type: 'application/x-sh' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `king-device-${name.replace(/\s+/g, '-').toLowerCase()}.sh`
+    a.click()
+    URL.revokeObjectURL(url)
+  }
+
+  return (
+    <div className="card" style={{ marginTop: '0.75rem', borderLeft: '3px solid var(--primary)' }}>
+      <h3 style={{ marginBottom: '1rem' }}>Edit: {app.name}</h3>
+
+      <div className="form-group">
+        <label>App Name</label>
+        <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="My King App" required />
+      </div>
+      <div className="form-group">
+        <label>Description</label>
+        <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What does your app do?" />
+      </div>
+      <div className="form-group">
+        <label>Callback URL</label>
+        <input type="url" value={redirectUri} onChange={(e) => setRedirectUri(e.target.value)} placeholder="https://myapp.com/callback" required />
+      </div>
+
+      <div className="form-group">
+        <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
+          <input type="checkbox" checked={allowKingDevice} onChange={(e) => setAllowKingDevice(e.target.checked)} style={{ width: '18px', height: '18px' }} />
+          <div>
+            <strong>Allow King Device</strong>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Enable device authentication for this application</p>
+          </div>
+        </label>
+      </div>
+
+      {allowKingDevice && (
+        <div style={{ background: 'var(--bg-input)', borderRadius: 'var(--radius)', padding: '1rem', marginBottom: '1rem' }}>
+          <h4 style={{ marginBottom: '0.75rem', fontSize: '0.9375rem' }}>King Device Example Code</h4>
+
+          {!uniqueId ? (
+            <div className="alert alert-error">
+              Error Code 1: No unique ID detected. Click "Get Unique ID" to generate one.
+            </div>
+          ) : (
+            <div style={{ marginBottom: '0.75rem' }}>
+              <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                <button className="btn btn-outline" style={{ fontSize: '0.8125rem', padding: '0.5rem 0.75rem' }} onClick={() => { navigator.clipboard.writeText(codeSample); setCodeCopied(true); setTimeout(() => setCodeCopied(false), 2000) }}>
+                  {codeCopied ? 'Copied!' : 'Copy Code'}
+                </button>
+                <button className="btn btn-primary" style={{ fontSize: '0.8125rem', padding: '0.5rem 0.75rem' }} onClick={handleDownload}>
+                  Download .sh
+                </button>
+              </div>
+              <pre style={{
+                background: '#0a0a14', color: '#a0a0c0', padding: '0.75rem', borderRadius: 'var(--radius)',
+                fontSize: '0.7rem', overflowX: 'auto', maxHeight: '200px', lineHeight: '1.4', fontFamily: 'monospace', whiteSpace: 'pre', wordWrap: 'normal'
+              }}>
+                {codeSample}
+              </pre>
+            </div>
+          )}
+
+          <div style={{ borderTop: '1px solid var(--border)', paddingTop: '0.75rem', marginTop: '0.5rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', flexWrap: 'wrap' }}>
+              <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Unique ID:</span>
+              <code style={{ fontSize: '0.75rem', color: 'var(--primary)', wordBreak: 'break-all' }}>
+                {uniqueId || <span style={{ color: 'var(--danger)' }}>Not set</span>}
+              </code>
+              {uniqueId && (
+                <button className="btn btn-outline" style={{ fontSize: '0.7rem', padding: '0.3rem 0.6rem' }} onClick={() => { navigator.clipboard.writeText(uniqueId); setUniqueIdCopied(true); setTimeout(() => setUniqueIdCopied(false), 2000) }}>
+                  {uniqueIdCopied ? 'Copied!' : 'Copy'}
+                </button>
+              )}
+              <button className="btn btn-primary" style={{ fontSize: '0.7rem', padding: '0.3rem 0.6rem' }} onClick={handleGetUniqueId}>
+                Get Unique ID
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: '0.5rem' }}>
+        <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
+          {saving ? 'Saving...' : 'Save'}
+        </button>
+        <button className="btn btn-outline" onClick={onCancel}>Cancel</button>
+      </div>
+    </div>
   )
 }
 
@@ -309,61 +483,45 @@ function Developer() {
   const [name, setName] = useState('')
   const [description, setDescription] = useState('')
   const [redirectUri, setRedirectUri] = useState('')
+  const [allowKingDevice, setAllowKingDevice] = useState(false)
   const [formError, setFormError] = useState('')
   const [formLoading, setFormLoading] = useState(false)
+  const [editingId, setEditingId] = useState(null)
   const [copiedId, setCopiedId] = useState(null)
 
   const baseAuthUrl = 'https://kingyorkson.github.io/King-Account/#/authorize'
 
   const fetchMyApps = async (userId) => {
-    const { data } = await supabase
-      .from('apps')
-      .select('*')
-      .eq('creator_id', userId)
-      .order('created_at', { ascending: false })
-
+    const { data } = await supabase.from('apps').select('*').eq('creator_id', userId).order('created_at', { ascending: false })
     setMyApps(data || [])
     setLoading(false)
   }
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data?.user) {
-        setUser(data.user)
-        fetchMyApps(data.user.id)
-      }
+      if (data?.user) { setUser(data.user); fetchMyApps(data.user.id) }
     })
   }, [])
 
   const handleCreate = async (e) => {
     e.preventDefault()
     setFormError('')
-
     if (!name.trim() || !redirectUri.trim()) {
       setFormError('Name and Callback URL are required')
       return
     }
-
     setFormLoading(true)
-
     const { error } = await supabase.from('apps').insert({
-      name: name.trim(),
-      description: description.trim(),
-      redirect_uri: redirectUri.trim(),
-      creator_id: user.id,
+      name: name.trim(), description: description.trim(),
+      redirect_uri: redirectUri.trim(), creator_id: user.id, allow_king_device: allowKingDevice,
     })
-
     if (error) {
       setFormError(error.message)
-      setFormLoading(false)
     } else {
-      setName('')
-      setDescription('')
-      setRedirectUri('')
-      setShowForm(false)
-      setFormLoading(false)
+      setName(''); setDescription(''); setRedirectUri(''); setAllowKingDevice(false); setShowForm(false)
       fetchMyApps(user.id)
     }
+    setFormLoading(false)
   }
 
   const handleDelete = async (appId) => {
@@ -393,39 +551,27 @@ function Developer() {
           <h3 style={{ marginBottom: '1rem' }}>Register a New Application</h3>
           <form onSubmit={handleCreate}>
             {formError && <div className="alert alert-error">{formError}</div>}
-
             <div className="form-group">
               <label>App Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="My King App"
-                required
-              />
+              <input type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="My King App" required />
             </div>
-
             <div className="form-group">
               <label>Description</label>
-              <input
-                type="text"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="What does your app do?"
-              />
+              <input type="text" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="What does your app do?" />
             </div>
-
             <div className="form-group">
               <label>Callback URL</label>
-              <input
-                type="url"
-                value={redirectUri}
-                onChange={(e) => setRedirectUri(e.target.value)}
-                placeholder="https://myapp.com/callback"
-                required
-              />
+              <input type="url" value={redirectUri} onChange={(e) => setRedirectUri(e.target.value)} placeholder="https://myapp.com/callback" required />
             </div>
-
+            <div className="form-group">
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', cursor: 'pointer' }}>
+                <input type="checkbox" checked={allowKingDevice} onChange={(e) => setAllowKingDevice(e.target.checked)} style={{ width: '18px', height: '18px' }} />
+                <div>
+                  <strong>Allow King Device</strong>
+                  <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>Enable device authentication for this application</p>
+                </div>
+              </label>
+            </div>
             <button type="submit" className="btn btn-primary" disabled={formLoading}>
               {formLoading ? 'Creating...' : 'Create App'}
             </button>
@@ -444,22 +590,25 @@ function Developer() {
         <div className="apps-list">
           {myApps.map((app) => {
             const authUrl = `${baseAuthUrl}?client_id=${app.id}&redirect_uri=${encodeURIComponent(app.redirect_uri)}`
+            const isEditing = editingId === app.id
             return (
               <div key={app.id} className="card" style={{ padding: '1.25rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                   <div>
                     <h3 style={{ marginBottom: '0.25rem' }}>{app.name}</h3>
-                    <p className="text-muted" style={{ fontSize: '0.8125rem' }}>
-                      {app.description || 'No description'}
-                    </p>
+                    <p className="text-muted" style={{ fontSize: '0.8125rem' }}>{app.description || 'No description'}</p>
+                    {app.allow_king_device && (
+                      <span style={{ display: 'inline-block', marginTop: '0.35rem', padding: '0.2rem 0.5rem', background: 'rgba(108,99,255,0.15)', color: 'var(--primary)', borderRadius: '100px', fontSize: '0.7rem' }}>
+                        King Device Enabled
+                      </span>
+                    )}
                   </div>
-                  <button
-                    className="btn btn-danger"
-                    style={{ padding: '0.35rem 0.65rem', fontSize: '0.8125rem' }}
-                    onClick={() => handleDelete(app.id)}
-                  >
-                    Delete
-                  </button>
+                  <div style={{ display: 'flex', gap: '0.35rem' }}>
+                    <button className="btn btn-outline" style={{ padding: '0.35rem 0.65rem', fontSize: '0.8125rem' }} onClick={() => setEditingId(isEditing ? null : app.id)}>
+                      {isEditing ? 'Close' : 'Edit'}
+                    </button>
+                    <button className="btn btn-danger" style={{ padding: '0.35rem 0.65rem', fontSize: '0.8125rem' }} onClick={() => handleDelete(app.id)}>Delete</button>
+                  </div>
                 </div>
 
                 <div style={{ fontSize: '0.8125rem', marginBottom: '0.75rem' }}>
@@ -474,34 +623,26 @@ function Developer() {
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.35rem' }}>
-                    Authorization URL
-                  </label>
+                  <label style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.35rem' }}>Authorization URL</label>
                   <div style={{ display: 'flex', gap: '0.5rem' }}>
-                    <input
-                      type="text"
-                      value={authUrl}
-                      readOnly
-                      style={{
-                        flex: 1,
-                        padding: '0.5rem 0.75rem',
-                        background: 'var(--bg-input)',
-                        border: '1px solid var(--border)',
-                        borderRadius: 'var(--radius)',
-                        color: 'var(--text)',
-                        fontSize: '0.75rem',
-                        fontFamily: 'monospace',
-                      }}
-                    />
-                    <button
-                      className="btn btn-primary"
-                      style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem', whiteSpace: 'nowrap' }}
-                      onClick={() => copyToClipboard(authUrl, app.id)}
-                    >
+                    <input type="text" value={authUrl} readOnly style={{
+                      flex: 1, padding: '0.5rem 0.75rem', background: 'var(--bg-input)', border: '1px solid var(--border)',
+                      borderRadius: 'var(--radius)', color: 'var(--text)', fontSize: '0.75rem', fontFamily: 'monospace',
+                    }} />
+                    <button className="btn btn-primary" style={{ padding: '0.5rem 0.75rem', fontSize: '0.75rem', whiteSpace: 'nowrap' }}
+                      onClick={() => copyToClipboard(authUrl, app.id)}>
                       {copiedId === app.id ? 'Copied!' : 'Copy'}
                     </button>
                   </div>
                 </div>
+
+                {isEditing && (
+                  <EditAppForm
+                    app={app}
+                    onSave={() => { setEditingId(null); fetchMyApps(user.id) }}
+                    onCancel={() => setEditingId(null)}
+                  />
+                )}
               </div>
             )
           })}
@@ -520,6 +661,7 @@ export default function Dashboard() {
         <NavLink to="/dashboard/privacy">Privacy</NavLink>
         <NavLink to="/dashboard/apps">Authorized Apps</NavLink>
         <NavLink to="/dashboard/storage">Cloud Storage</NavLink>
+        <NavLink to="/dashboard/devices">King Devices</NavLink>
         <NavLink to="/dashboard/developer">Developer</NavLink>
       </div>
 
@@ -530,6 +672,7 @@ export default function Dashboard() {
           <Route path="privacy" element={<PrivacySettings />} />
           <Route path="apps" element={<AuthorizedApps />} />
           <Route path="storage" element={<CloudStorage />} />
+          <Route path="devices" element={<KingDevices />} />
           <Route path="developer" element={<Developer />} />
         </Routes>
       </div>
