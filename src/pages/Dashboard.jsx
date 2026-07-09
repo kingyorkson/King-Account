@@ -332,19 +332,35 @@ UNIQUE_ID="${app.unique_id || 'ERROR_NO_UNIQUE_ID'}"
 AUTH_URL="https://kingyorkson.github.io/King-Account/#/authorize?client_id=${app.id}"
 VERSION="${ver}"
 
+# Supabase registration endpoint
+API_URL="https://fqmmzwtlnnsisgdawwho.supabase.co/rest/v1/king_devices"
+API_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZxbW16d3Rsbm5zaXNnZGF3d2hvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODMzMzI3MTgsImV4cCI6MjA5ODkwODcxOH0.2uJCAKovzpYI2J9SQRiD7hq53-O0KE47gzQgq1tA3-8"
+
 # This configuration is cached locally.
 # It will NOT update automatically.
-# To update: manually run the update script or re-download from Developer page.
+# To update: run the update script or re-download from Developer page.
 
 FEATURES=[
 ${features}
 ]
 
 # Device registration
-echo "Config loaded for: $APP_NAME"
-echo "Version: $VERSION"
-echo "Using Unique ID: $UNIQUE_ID"
-echo "Features: $(echo "$FEATURES" | wc -l) configured"
+echo "Registering device: $(hostname)"
+echo "App: $APP_NAME | Version: $VERSION"
+echo "Unique ID: $UNIQUE_ID"
+
+curl -s -X POST "$API_URL" \\
+  -H "Content-Type: application/json" \\
+  -H "apikey: $API_KEY" \\
+  -H "Authorization: Bearer $API_KEY" \\
+  -d "{
+    \\"device_name\\": \\"$(hostname)\\",
+    \\"device_identifier\\": \\"$UNIQUE_ID\\",
+    \\"app_id\\": \\"$CLIENT_ID\\"
+  }"
+
+echo ""
+echo "Device registered. Check King Devices on your dashboard."
 `
 }
 
